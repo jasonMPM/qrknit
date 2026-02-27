@@ -60,7 +60,8 @@ def init_db():
                 created_at TEXT NOT NULL,
                 expires_at TEXT,
                 clicks     INTEGER DEFAULT 0,
-                is_active  INTEGER DEFAULT 1
+                is_active  INTEGER DEFAULT 1,
+                is_pinned  INTEGER DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS clicks (
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,6 +86,11 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_clicks_link ON clicks(link_id);
             CREATE INDEX IF NOT EXISTS idx_clicks_at   ON clicks(clicked_at);
         """)
+        # Idempotent migration — add is_pinned to existing databases
+        try:
+            conn.execute("ALTER TABLE links ADD COLUMN is_pinned INTEGER DEFAULT 0")
+        except Exception:
+            pass
 
 init_db()
 
@@ -291,6 +297,7 @@ def format_link(row, conn):
         'expires_at': row['expires_at'],
         'clicks':    row['clicks'],
         'is_active': row['is_active'],
+        'is_pinned': row['is_pinned'],
         'short_url': f"{BASE_URL}/{row['code']}",
         'qr_url':    f"{BASE_URL}/api/qr/{row['code']}",
         'tags':      get_link_tags(conn, row['id']),
@@ -409,7 +416,7 @@ def list_links():
     with get_db() as conn:
         total = conn.execute(f'SELECT COUNT(*) FROM links l WHERE {where_sql}', params).fetchone()[0]
         rows  = conn.execute(
-            f'SELECT * FROM links l WHERE {where_sql} ORDER BY l.created_at DESC LIMIT ? OFFSET ?',
+            f'SELECT * FROM links l WHERE {where_sql} ORDER BY l.is_pinned DESC, l.created_at DESC LIMIT ? OFFSET ?',
             params + [per_page, offset]
         ).fetchall()
         links = [format_link(r, conn) for r in rows]
@@ -443,6 +450,7 @@ def edit_link(code):
             updates['long_url'] = url
         if 'title'      in data: updates['title']      = data['title'].strip() or None
         if 'expires_at' in data: updates['expires_at'] = data['expires_at'] or None
+        if 'is_pinned'  in data: updates['is_pinned']  = 1 if data['is_pinned'] else 0
 
         if updates:
             set_clause = ', '.join(f'{k}=?' for k in updates)
@@ -521,6 +529,43 @@ def link_analytics(code):
         'period_clicks': sum(d['clicks'] for d in daily),
         'daily': daily, 'referrers': referrers, 'devices': devices, 'browsers': browsers,
     })
+
+
+# ─────────────────────────────────────────────
+# Fetch Title
+# ─────────────────────────────────────────────
+
+@app.route('/api/fetch-title')
+@login_required
+def fetch_title():
+    """Fetch the page title for a URL server-side (avoids CORS)."""
+    import urllib.request as urllib_req
+    url = (request.args.get('url') or '').strip()
+    if not url or not validate_url(url):
+        return jsonify({'title': ''})
+    try:
+        req = urllib_req.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; Snippy-title-fetcher/1.0)',
+            'Accept': 'text/html',
+        })
+        with urllib_req.urlopen(req, timeout=5) as resp:
+            ct = resp.headers.get('Content-Type', '')
+            if 'html' not in ct.lower():
+                return jsonify({'title': ''})
+            html = resp.read(65536).decode('utf-8', errors='replace')
+        # og:title (two attribute orderings)
+        m = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']*)["\']', html, re.I)
+        if not m:
+            m = re.search(r'<meta[^>]+content=["\']([^"\']*)["\'][^>]+property=["\']og:title["\']', html, re.I)
+        if m:
+            return jsonify({'title': m.group(1).strip()[:200]})
+        # Fall back to <title>
+        m = re.search(r'<title[^>]*>([^<]+)</title>', html, re.I)
+        if m:
+            return jsonify({'title': m.group(1).strip()[:200]})
+        return jsonify({'title': ''})
+    except Exception:
+        return jsonify({'title': ''})
 
 
 # ─────────────────────────────────────────────
