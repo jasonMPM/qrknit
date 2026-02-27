@@ -24,6 +24,7 @@ services:
       - PORT=5000
       - DEBUG=false
       - SECRET_KEY=replace-with-a-long-random-string   # ← Change this!
+      - ADMIN_PASSWORD=replace-with-a-strong-password  # ← Change this!
       - COOKIE_SECURE=true                  # Set to false only if not using HTTPS
 
     # Optional: resource limits

@@ -312,28 +312,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
     <div class="modal-logo">
       <span style="color:var(--text)">to</span><span style="color:var(--accent);text-shadow:0 0 12px var(--accent)">.</span><span style="text-transform:uppercase">ALWISP</span>
     </div>
-    <div class="modal-tabs">
-      <button class="modal-tab active" onclick="switchAuthTab('login')">Login</button>
-      <button class="modal-tab" id="register-tab" onclick="switchAuthTab('register')">Register</button>
-    </div>
-
-    <!-- Login -->
     <div class="modal-form active" id="form-login">
-      <label>EMAIL<input type="email" id="login-email" placeholder="you@example.com"></label>
-      <label>PASSWORD<input type="password" id="login-password" placeholder="••••••••"></label>
+      <label>PASSWORD<input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></label>
       <div class="modal-err" id="login-err"></div>
       <button class="btn-primary" onclick="doLogin()" style="width:100%">Login</button>
-    </div>
-
-    <!-- Register -->
-    <div class="modal-form" id="form-register">
-      <label>INVITE TOKEN<input type="text" id="reg-invite" placeholder="Paste your invite token"></label>
-      <label>EMAIL<input type="email" id="reg-email" placeholder="you@example.com"></label>
-      <label>DISPLAY NAME<input type="text" id="reg-name" placeholder="Your name"></label>
-      <label>PASSWORD<input type="password" id="reg-password" placeholder="Min 8 characters"></label>
-      <div class="modal-err" id="reg-err"></div>
-      <button class="btn-primary" onclick="doRegister()" style="width:100%">Create Account</button>
-      <div class="invite-note">Registration requires an invite link from an admin.</div>
     </div>
   </div>
 </div>
@@ -347,14 +329,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
     <button class="active" data-view="home">Shorten</button>
     <button data-view="dashboard">Dashboard</button>
     <button data-view="qr">QR Codes</button>
-    <button data-view="settings" id="nav-settings">Settings</button>
-    <button data-view="admin" id="nav-admin" style="display:none">Admin</button>
   </nav>
   <div class="header-right">
-    <div class="user-badge" id="user-badge" style="display:none">
-      <span id="user-name"></span>
-      <span class="admin-tag" id="admin-tag" style="display:none">ADMIN</span>
-    </div>
     <button class="btn-logout" id="logout-btn" style="display:none" onclick="doLogout()">Logout</button>
   </div>
 </header>
@@ -378,10 +354,6 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
         <div><label class="field-label">CUSTOM CODE</label><input class="field-input" id="custom-code" placeholder="e.g. mylink" maxlength="20"></div>
         <div><label class="field-label">TITLE (optional)</label><input class="field-input" id="link-title" placeholder="e.g. My Homepage"></div>
         <div><label class="field-label">EXPIRY DATE</label><input class="field-input" type="date" id="link-expiry"></div>
-        <div>
-          <label class="field-label">WORKSPACE (optional)</label>
-          <select class="field-input" id="link-workspace"><option value="">— Personal link —</option></select>
-        </div>
         <div style="grid-column:1/-1">
           <label class="field-label">TAGS (Enter or comma)</label>
           <div class="tag-input-wrap" id="tag-input-wrap">
@@ -420,13 +392,6 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
     <div class="stat-card"><div class="stat-value" id="stat-clicks">—</div><div class="stat-label">TOTAL CLICKS</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-7d">—</div><div class="stat-label">CLICKS / 7D</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">AVG / LINK</div></div>
-  </div>
-
-  <div class="ws-row" id="ws-row" style="display:none">
-    <span style="font-size:11px;font-family:var(--font-mono);color:var(--muted)">WORKSPACE:</span>
-    <button class="ws-btn active" onclick="setWorkspaceFilter(null, this)">All</button>
-    <div id="ws-buttons"></div>
-    <button class="btn-sm" onclick="showCreateWs()" style="margin-left:auto">+ New Workspace</button>
   </div>
 
   <div class="toolbar">
@@ -471,81 +436,6 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
   </div>
 </div>
 
-<!-- ── SETTINGS ── -->
-<div class="view" id="view-settings">
-  <div class="section-head"><div class="section-title">Settings</div></div>
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('settings','account')">Account</button>
-    <button class="tab-btn" onclick="switchTab('settings','apikeys')">API Keys</button>
-    <button class="tab-btn" onclick="switchTab('settings','workspaces')">Workspaces</button>
-  </div>
-
-  <!-- Account tab -->
-  <div class="tab-content active" id="settings-tab-account">
-    <div class="panel" style="max-width:480px">
-      <h3>ACCOUNT DETAILS</h3>
-      <div style="font-family:var(--font-mono);font-size:13px;margin-bottom:16px">
-        <div style="color:var(--muted);font-size:11px;margin-bottom:4px">EMAIL</div>
-        <div id="acct-email">—</div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:13px;margin-bottom:16px">
-        <div style="color:var(--muted);font-size:11px;margin-bottom:4px">DISPLAY NAME</div>
-        <div id="acct-name">—</div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:13px">
-        <div style="color:var(--muted);font-size:11px;margin-bottom:4px">ROLE</div>
-        <div id="acct-role">—</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- API Keys tab -->
-  <div class="tab-content" id="settings-tab-apikeys">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:13px;color:var(--muted)">Use API keys to access the API without logging in. Keys are shown once — save them securely.</div>
-      <button class="btn-sm save" onclick="createApiKey()" style="flex-shrink:0;margin-left:16px">+ New Key</button>
-    </div>
-    <div id="new-key-reveal" class="key-reveal"></div>
-    <div id="keys-list"></div>
-  </div>
-
-  <!-- Workspaces tab -->
-  <div class="tab-content" id="settings-tab-workspaces">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:13px;color:var(--muted)">Workspaces let teams share links. You own links in your personal space; workspace links are visible to all members.</div>
-      <button class="btn-sm save" onclick="showCreateWs()" style="flex-shrink:0;margin-left:16px">+ New</button>
-    </div>
-    <div id="ws-list"></div>
-  </div>
-</div>
-
-<!-- ── ADMIN ── -->
-<div class="view" id="view-admin">
-  <div class="section-head"><div class="section-title">Admin Panel</div></div>
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('admin','users')">Users</button>
-    <button class="tab-btn" onclick="switchTab('admin','invites')">Invites</button>
-    <button class="tab-btn" onclick="switchTab('admin','alllinks')">All Links</button>
-  </div>
-
-  <!-- Users -->
-  <div class="tab-content active" id="admin-tab-users">
-    <div id="admin-users-content"><div class="empty-state"><div class="empty-icon">👥</div><p>Loading...</p></div></div>
-  </div>
-
-  <!-- Invites -->
-  <div class="tab-content" id="admin-tab-invites">
-    <div style="margin-bottom:16px">
-      <button class="btn-sm save" onclick="createInvite()">+ Generate Invite Link</button>
-    </div>
-    <div id="admin-invites-list"></div>
-  </div>
-
-  <!-- All Links -->
-  <div class="tab-content" id="admin-tab-alllinks">
-    <div id="admin-alllinks-content"><div class="empty-state"><div class="empty-icon">🔗</div><p>Loading...</p></div></div>
-  </div>
-</div>
 
 </main>
 
@@ -559,109 +449,28 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
   <div id="dbg-content">Loading...</div>
   <br>
   <button onclick="runDebug()" style="background:#333;border:1px solid #555;color:#ccc;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px">Refresh</button>
-  <button onclick="testWorkspaces()" style="background:#333;border:1px solid #555;color:#ccc;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;margin-left:6px">Test /api/workspaces</button>
+  <button onclick="testStats()" style="background:#333;border:1px solid #555;color:#ccc;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;margin-left:6px">Test /api/stats</button>
   <pre id="dbg-extra" style="color:#aaa;margin-top:8px;white-space:pre-wrap;"></pre>
 </div>
 
 <script>
 const BASE = window.location.origin;
-let currentUser = null;
-let accessToken = null;
-let refreshToken = null;
+let loggedIn = false;
 let allTags = [];
-let allWorkspaces = [];
 let activeTag = null;
-let activeWsId = null;
 let tagInputTags = [];
 let searchTimer = null;
-let _sessionInvalidated = false;
-
-// ── Token storage ──────────────────────────────────
-function saveTokens(access, refresh) {
-  _sessionInvalidated = false;  // reset so authFetch can protect the new session
-  accessToken  = access;
-  refreshToken = refresh;
-  localStorage.setItem('at', access);
-  localStorage.setItem('rt', refresh);
-}
-function loadTokens() {
-  accessToken  = localStorage.getItem('at');
-  refreshToken = localStorage.getItem('rt');
-}
-function clearTokens() {
-  accessToken = refreshToken = null;
-  localStorage.removeItem('at');
-  localStorage.removeItem('rt');
-}
-
-// Single in-flight refresh promise — concurrent callers all piggyback on it
-let _refreshPromise = null;
-
-async function doRefresh() {
-  if (_refreshPromise) return _refreshPromise;
-  _refreshPromise = (async () => {
-    try {
-      const r = await fetch(`${BASE}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({refresh_token: refreshToken})
-      });
-      if (r.ok) {
-        const d = await r.json();
-        saveTokens(d.access_token, d.refresh_token);
-        return true;
-      }
-    } catch(e) {}
-    return false;
-  })();
-  const result = await _refreshPromise;
-  _refreshPromise = null;
-  return result;
-}
 
 async function authFetch(url, opts = {}) {
-  // Proactively refresh if token is expired or expires within 60s
-  if (accessToken) {
-    try {
-      const p = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-      if (p.exp && (p.exp - 60) < (Date.now() / 1000)) {
-        if (refreshToken) await doRefresh();
-      }
-    } catch(e) {}
-  }
-
-  const makeReq = () => fetch(url, {
+  const resp = await fetch(url, {
     ...opts,
-    credentials: 'include',   // always send cookies (auth cookie survives NPM proxy)
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.headers || {}),
-      ...(accessToken ? {'X-Auth-Token': accessToken} : {}),
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
-
-  let resp = await makeReq();
-
-  // On any 401: always try a token refresh once before giving up.
-  // This handles wrong-signature tokens (SECRET_KEY changed between deploys),
-  // expired tokens the client didn't detect, and any server-side invalidation.
-  if (resp.status === 401 && refreshToken) {
-    const refreshed = await doRefresh();
-    if (refreshed) {
-      resp = await makeReq();
-    }
-    if (resp.status === 401 && !_sessionInvalidated) {
-      // Refresh did not help — session is truly dead.
-      // Use the flag to ensure concurrent failing requests only trigger ONE logout,
-      // preventing the modal from being called repeatedly (the login-loop bug).
-      _sessionInvalidated = true;
-      clearTokens();
-      currentUser = null;
-      onLoggedOut();
-    }
+  if (resp.status === 401) {
+    loggedIn = false;
+    onLoggedOut();
   }
-
   return resp;
 }
 
@@ -677,8 +486,6 @@ function showView(name) {
   if (btn) btn.classList.add('active');
   document.getElementById(`view-${name}`)?.classList.add('active');
   if (name === 'dashboard') loadDashboard();
-  if (name === 'settings')  loadSettings();
-  if (name === 'admin')     loadAdmin();
 }
 
 // ── Toast ──────────────────────────────────────────
@@ -694,182 +501,53 @@ function toast(msg, type = 'success') {
 function showAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
 function hideAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
 
-function switchAuthTab(tab) {
-  document.querySelectorAll('.modal-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-  document.getElementById('form-login').classList.toggle('active', tab==='login');
-  document.getElementById('form-register').classList.toggle('active', tab==='register');
-}
-
 async function doLogin() {
-  const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl    = document.getElementById('login-err');
   errEl.classList.remove('show');
   try {
     const resp = await fetch(`${BASE}/api/auth/login`, {
       method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password})
+      body: JSON.stringify({password})
     });
     const d = await resp.json();
     if (!resp.ok) { errEl.textContent = d.error; errEl.classList.add('show'); return; }
-    saveTokens(d.access_token, d.refresh_token);
-    currentUser = d.user;
+    loggedIn = true;
     onLoggedIn();
-  } catch(e) { errEl.textContent='Network error'; errEl.classList.add('show'); }
-}
-
-async function doRegister() {
-  const invite       = document.getElementById('reg-invite').value.trim();
-  const email        = document.getElementById('reg-email').value.trim();
-  const display_name = document.getElementById('reg-name').value.trim();
-  const password     = document.getElementById('reg-password').value;
-  const errEl        = document.getElementById('reg-err');
-  errEl.classList.remove('show');
-  try {
-    const resp = await fetch(`${BASE}/api/auth/register`, {
-      method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password, display_name, invite_token: invite})
-    });
-    const d = await resp.json();
-    if (!resp.ok) { errEl.textContent = d.error; errEl.classList.add('show'); return; }
-    saveTokens(d.access_token, d.refresh_token);
-    currentUser = d.user;
-    onLoggedIn();
-    toast('Account created!');
   } catch(e) { errEl.textContent='Network error'; errEl.classList.add('show'); }
 }
 
 async function doLogout() {
-  await authFetch(`${BASE}/api/auth/logout`, {
-    method:'POST', body: JSON.stringify({refresh_token: refreshToken})
-  }).catch(()=>{});
-  clearTokens(); currentUser = null; onLoggedOut();
+  await fetch(`${BASE}/api/auth/logout`, {method:'POST', credentials:'include'}).catch(()=>{});
+  loggedIn = false;
+  onLoggedOut();
 }
 
 function onLoggedIn() {
   hideAuthModal();
-  document.getElementById('user-badge').style.display = 'flex';
   document.getElementById('logout-btn').style.display = 'block';
-  document.getElementById('user-name').textContent = currentUser.display_name || currentUser.email;
-  document.getElementById('admin-tag').style.display = currentUser.is_admin ? 'inline' : 'none';
-  document.getElementById('nav-admin').style.display = currentUser.is_admin ? 'inline-block' : 'none';
-  loadWorkspaces();
   loadDashboard();
 }
 
 function onLoggedOut() {
-  document.getElementById('user-badge').style.display = 'none';
   document.getElementById('logout-btn').style.display = 'none';
-  document.getElementById('nav-admin').style.display = 'none';
-  document.getElementById('ws-row').style.display = 'none';
   showView('home');
   showAuthModal();
 }
 
 // ── Init ───────────────────────────────────────────
 (async function init() {
-  loadTokens();
-  // Check URL for invite token
   const params = new URLSearchParams(window.location.search);
-  const inv = params.get('invite');
-  if (inv) { document.getElementById('reg-invite').value = inv; switchAuthTab('register'); }
   if (params.get('error') === 'not_found') toast('Link not found', 'error');
   if (params.get('error') === 'expired')   toast('Link has expired', 'error');
 
-  if (accessToken) {
-    try {
-      const resp = await authFetch(`${BASE}/api/auth/me`);
-      if (resp.ok) { currentUser = await resp.json(); onLoggedIn(); return; }
-    } catch(e) {}
-  }
-
-  // localStorage may be empty (e.g. after clearTokens on expiry), but a valid
-  // HttpOnly refresh_token cookie may still exist. Try a silent refresh before
-  // giving up and showing the login modal.
-  const refreshed = await doRefresh();
-  if (refreshed) {
-    try {
-      const resp = await authFetch(`${BASE}/api/auth/me`);
-      if (resp.ok) { currentUser = await resp.json(); onLoggedIn(); return; }
-    } catch(e) {}
-  }
+  try {
+    const resp = await fetch(`${BASE}/api/auth/me`, {credentials:'include'});
+    if (resp.ok) { loggedIn = true; onLoggedIn(); return; }
+  } catch(e) {}
 
   showAuthModal();
 })();
-
-// ── Workspaces ─────────────────────────────────────
-async function loadWorkspaces() {
-  try {
-    const d = await (await authFetch(`${BASE}/api/workspaces`)).json();
-    allWorkspaces = d.workspaces || [];
-    renderWsSelector();
-    populateWsDropdown();
-    renderWsList();
-  } catch(e) {}
-}
-
-function renderWsSelector() {
-  const row = document.getElementById('ws-row');
-  const btns = document.getElementById('ws-buttons');
-  if (!allWorkspaces.length) { row.style.display = 'none'; return; }
-  row.style.display = 'flex';
-  btns.innerHTML = allWorkspaces.map(w => `
-    <button class="ws-btn ${activeWsId===w.id?'active':''}" onclick="setWorkspaceFilter(${w.id}, this)">${escHtml(w.name)}</button>
-  `).join('');
-}
-
-function setWorkspaceFilter(wsId, btn) {
-  activeWsId = wsId;
-  document.querySelectorAll('.ws-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadLinks();
-}
-
-function populateWsDropdown() {
-  const sel = document.getElementById('link-workspace');
-  sel.innerHTML = '<option value="">— Personal link —</option>' +
-    allWorkspaces.map(w => `<option value="${w.id}">${escHtml(w.name)}</option>`).join('');
-}
-
-function renderWsList() {
-  const el = document.getElementById('ws-list');
-  if (!allWorkspaces.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏢</div><p>No workspaces yet</p></div>'; return; }
-  el.innerHTML = allWorkspaces.map(w => `
-    <div class="panel" style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-family:var(--font-head);font-size:14px">${escHtml(w.name)}</div>
-        <span class="badge member">${w.role}</span>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">
-        ${w.link_count} links · ${w.member_count} members · /${w.slug}
-      </div>
-      ${w.role==='owner'||w.role==='admin' ? `
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <input class="field-input" style="max-width:200px" placeholder="member@email.com" id="ws-add-email-${w.id}">
-        <button class="btn-sm save" onclick="addWsMember(${w.id})">Add member</button>
-      </div>` : ''}
-    </div>
-  `).join('');
-}
-
-async function showCreateWs() {
-  const name = prompt('Workspace name:');
-  if (!name) return;
-  const resp = await authFetch(`${BASE}/api/workspaces`, {method:'POST',body:JSON.stringify({name})});
-  const d = await resp.json();
-  if (!resp.ok) { toast(d.error||'Failed','error'); return; }
-  toast('Workspace created!');
-  loadWorkspaces();
-}
-
-async function addWsMember(wsId) {
-  const email = document.getElementById(`ws-add-email-${wsId}`).value.trim();
-  if (!email) return;
-  const resp = await authFetch(`${BASE}/api/workspaces/${wsId}/members`, {method:'POST',body:JSON.stringify({email})});
-  const d = await resp.json();
-  if (!resp.ok) { toast(d.error||'Failed','error'); return; }
-  toast('Member added!'); loadWorkspaces();
-}
 
 // ── Dashboard ──────────────────────────────────────
 async function loadDashboard() {
@@ -910,9 +588,8 @@ function renderTagFilters() {
 async function loadLinks() {
   const q = document.getElementById('search-input').value.trim();
   let url = `${BASE}/api/links?per_page=50`;
-  if (q)          url += `&q=${encodeURIComponent(q)}`;
-  if (activeTag)  url += `&tag=${encodeURIComponent(activeTag)}`;
-  if (activeWsId) url += `&workspace_id=${activeWsId}`;
+  if (q)         url += `&q=${encodeURIComponent(q)}`;
+  if (activeTag) url += `&tag=${encodeURIComponent(activeTag)}`;
   try {
     const d = await (await authFetch(url)).json();
     renderLinks(d.links || []);
@@ -937,9 +614,8 @@ function buildLinkItem(l) {
   item.className = 'link-item';
   item.id = `item-${l.code}`;
   const tagPills = (l.tags||[]).map(t=>`<span class="link-tag">${t.name}</span>`).join('');
-  const wsPill   = l.workspace_id ? `<span class="ws-tag">${(allWorkspaces.find(w=>w.id===l.workspace_id)||{}).name||'workspace'}</span>` : '';
   const expNote  = l.expires_at ? `<span style="font-size:10px;color:var(--muted);font-family:var(--font-mono)"> · exp ${l.expires_at.slice(0,10)}</span>`:'';
-  const canEdit  = currentUser && (l.owner_id===currentUser.id || currentUser.is_admin);
+  const canEdit  = loggedIn;
 
   item.innerHTML = `
     <div class="link-row" onclick="toggleExpand('${l.code}')">
@@ -947,7 +623,7 @@ function buildLinkItem(l) {
       <div class="link-details">
         <div class="link-title">${escHtml(l.title||l.long_url)}</div>
         <div class="link-original">${escHtml(l.long_url)}</div>
-        ${(tagPills||wsPill)?`<div class="link-tags">${wsPill}${tagPills}</div>`:''}
+        ${tagPills?`<div class="link-tags">${tagPills}</div>`:''}
       </div>
       <div class="link-meta">
         <div class="link-clicks"><strong>${l.clicks}</strong> clicks${expNote}</div>
@@ -1119,14 +795,12 @@ async function doShorten() {
   const code   = document.getElementById('custom-code').value.trim();
   const title  = document.getElementById('link-title').value.trim();
   const expiry = document.getElementById('link-expiry').value;
-  const wsId   = document.getElementById('link-workspace').value;
   if (!url) { toast('Please enter a URL','error'); return; }
   const btn=document.getElementById('shorten-btn'), lbl=document.getElementById('shorten-label');
   btn.disabled=true; lbl.innerHTML='<span class="spinner"></span>';
   try {
     const resp = await authFetch(`${BASE}/api/shorten`,{method:'POST',body:JSON.stringify({
-      url, custom_code:code, title, expires_at:expiry||null, tags:tagInputTags,
-      workspace_id: wsId ? parseInt(wsId) : null
+      url, custom_code:code, title, expires_at:expiry||null, tags:tagInputTags
     })});
     const data = await resp.json();
     if(!resp.ok){toast(data.error||'Error','error');return;}
@@ -1146,158 +820,6 @@ function showResult(data) {
   document.getElementById('copy-btn').onclick=()=>{navigator.clipboard.writeText(data.short_url);toast('Copied!');};
   document.getElementById('dl-qr-btn').onclick=()=>{const a=document.createElement('a');a.href=data.qr_url;a.download=`qr-${data.code}.png`;a.click();};
   document.getElementById('customize-qr-btn').onclick=()=>{document.getElementById('qr-url-input').value=data.short_url;showView('qr');};
-}
-
-// ── Settings ───────────────────────────────────────
-function switchTab(view, tab) {
-  document.querySelectorAll(`#view-${view} .tab-btn`).forEach((b,i)=>{
-    b.classList.toggle('active', b.textContent.toLowerCase().includes(tab.toLowerCase()));
-  });
-  document.querySelectorAll(`#view-${view} .tab-content`).forEach(c=>{
-    c.classList.toggle('active', c.id===`${view}-tab-${tab}`);
-  });
-  if(view==='settings'&&tab==='apikeys') loadApiKeys();
-  if(view==='settings'&&tab==='workspaces') renderWsList();
-  if(view==='admin'&&tab==='users')    loadAdminUsers();
-  if(view==='admin'&&tab==='invites')  loadAdminInvites();
-  if(view==='admin'&&tab==='alllinks') loadAdminAllLinks();
-}
-
-function loadSettings() {
-  if(!currentUser) return;
-  document.getElementById('acct-email').textContent = currentUser.email;
-  document.getElementById('acct-name').textContent  = currentUser.display_name||'—';
-  document.getElementById('acct-role').textContent  = currentUser.is_admin ? 'Admin' : 'Member';
-  loadApiKeys();
-}
-
-async function loadApiKeys() {
-  const resp = await authFetch(`${BASE}/api/auth/keys`);
-  const d    = await resp.json();
-  const el   = document.getElementById('keys-list');
-  if(!d.keys||!d.keys.length){ el.innerHTML='<div class="empty-state" style="padding:30px"><div class="empty-icon">🔑</div><p>No API keys yet</p></div>'; return; }
-  el.innerHTML = d.keys.map(k=>`
-    <div class="key-card">
-      <div>
-        <div class="key-prefix">${k.key_prefix}</div>
-        <div class="key-label">${k.label} · created ${k.created_at.slice(0,10)}</div>
-      </div>
-      <button class="btn-sm danger" onclick="deleteApiKey(${k.id})">Revoke</button>
-    </div>`).join('');
-}
-
-async function createApiKey() {
-  const label = prompt('Key label (e.g. "Home Server"):') || 'API Key';
-  const resp  = await authFetch(`${BASE}/api/auth/keys`,{method:'POST',body:JSON.stringify({label})});
-  const d     = await resp.json();
-  if(!resp.ok){toast(d.error||'Failed','error');return;}
-  const reveal = document.getElementById('new-key-reveal');
-  reveal.textContent = d.key;
-  reveal.classList.add('show');
-  toast('Key created — save it now, it won\'t be shown again!');
-  loadApiKeys();
-  setTimeout(()=>reveal.classList.remove('show'), 60000);
-}
-
-async function deleteApiKey(id) {
-  if(!confirm('Revoke this API key?'))return;
-  await authFetch(`${BASE}/api/auth/keys/${id}`,{method:'DELETE'});
-  toast('Key revoked'); loadApiKeys();
-}
-
-// ── Admin ──────────────────────────────────────────
-function loadAdmin() {
-  loadAdminUsers();
-  loadAdminInvites();
-}
-
-async function loadAdminUsers() {
-  const resp = await authFetch(`${BASE}/api/admin/users`);
-  const d    = await resp.json();
-  const el   = document.getElementById('admin-users-content');
-  if(!d.users||!d.users.length){ el.innerHTML='<div class="empty-state"><p>No users</p></div>'; return; }
-  el.innerHTML = `<table class="data-table">
-    <thead><tr><th>EMAIL</th><th>NAME</th><th>ROLE</th><th>LINKS</th><th>JOINED</th><th>ACTIONS</th></tr></thead>
-    <tbody>${d.users.map(u=>`
-      <tr>
-        <td>${escHtml(u.email)}</td>
-        <td>${escHtml(u.display_name||'—')}</td>
-        <td>
-          ${u.is_admin?'<span class="badge admin">ADMIN</span>':'<span class="badge member">MEMBER</span>'}
-          ${!u.is_active?'<span class="badge inactive">INACTIVE</span>':''}
-        </td>
-        <td>${u.link_count}</td>
-        <td style="color:var(--muted)">${u.created_at.slice(0,10)}</td>
-        <td>
-          <div style="display:flex;gap:5px">
-            <button class="btn-sm" onclick="toggleUserAdmin(${u.id},${u.is_admin})">${u.is_admin?'Demote':'Promote'}</button>
-            <button class="btn-sm ${u.is_active?'danger':''}" onclick="toggleUserActive(${u.id},${u.is_active})">${u.is_active?'Disable':'Enable'}</button>
-            <button class="btn-sm" onclick="viewUserLinks(${u.id},'${escHtml(u.email)}')">Links</button>
-          </div>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-async function toggleUserAdmin(id, isAdmin) {
-  await authFetch(`${BASE}/api/admin/users/${id}`,{method:'PATCH',body:JSON.stringify({is_admin:!isAdmin})});
-  toast('Updated'); loadAdminUsers();
-}
-async function toggleUserActive(id, isActive) {
-  await authFetch(`${BASE}/api/admin/users/${id}`,{method:'PATCH',body:JSON.stringify({is_active:!isActive})});
-  toast('Updated'); loadAdminUsers();
-}
-async function viewUserLinks(userId, email) {
-  const resp = await authFetch(`${BASE}/api/admin/users/${userId}/links`);
-  const d    = await resp.json();
-  alert(`Links for ${email}:\n\n${(d.links||[]).map(l=>`${l.short_url} (${l.clicks} clicks)`).join('\n')||'No links'}`);
-}
-
-async function loadAdminInvites() {
-  const resp = await authFetch(`${BASE}/api/admin/invites`);
-  const d    = await resp.json();
-  const el   = document.getElementById('admin-invites-list');
-  if(!d.invites||!d.invites.length){ el.innerHTML='<div class="empty-state" style="padding:30px"><div class="empty-icon">✉️</div><p>No invites yet</p></div>'; return; }
-  el.innerHTML = d.invites.map(i=>`
-    <div class="invite-card">
-      <div style="flex:1;overflow:hidden">
-        <div class="invite-url">${BASE}/register?invite=${i.token}</div>
-        <div style="font-size:11px;font-family:var(--font-mono);color:var(--muted);margin-top:3px">
-          Expires ${i.expires_at.slice(0,10)}
-          ${i.used_by?`· Used by ${escHtml(i.used_by_email||'unknown')}`:''}
-        </div>
-      </div>
-      ${!i.used_by?`<button class="btn-sm" onclick="navigator.clipboard.writeText('${BASE}/register?invite=${i.token}');toast('Copied!')">Copy</button>`:'<span class="invite-used">USED</span>'}
-    </div>`).join('');
-}
-
-async function createInvite() {
-  const resp = await authFetch(`${BASE}/api/admin/invites`, {method:'POST', body: JSON.stringify({})});
-  const d    = await resp.json();
-  if(!resp.ok){toast(d.error||'Failed','error');return;}
-  navigator.clipboard.writeText(d.invite_url);
-  toast('Invite created & copied!');
-  loadAdminInvites();
-}
-
-async function loadAdminAllLinks() {
-  const resp = await authFetch(`${BASE}/api/links?per_page=100&all=1`);
-  const d    = await resp.json();
-  const el   = document.getElementById('admin-alllinks-content');
-  if(!d.links||!d.links.length){ el.innerHTML='<div class="empty-state"><p>No links</p></div>'; return; }
-  el.innerHTML = `<table class="data-table">
-    <thead><tr><th>CODE</th><th>URL</th><th>OWNER</th><th>CLICKS</th><th>CREATED</th></tr></thead>
-    <tbody>${d.links.map(l=>`
-      <tr>
-        <td style="color:var(--accent);font-family:var(--font-head)">${l.code}</td>
-        <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(l.long_url)}</td>
-        <td style="color:var(--muted)">${l.owner_id||'anon'}</td>
-        <td>${l.clicks}</td>
-        <td style="color:var(--muted)">${l.created_at.slice(0,10)}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
 }
 
 // ── QR Generator ───────────────────────────────────
@@ -1326,30 +848,24 @@ if (new URLSearchParams(window.location.search).get('debug') === '1') {
   runDebug();
 }
 async function runDebug() {
-  const at = localStorage.getItem('at');
-  const rt = localStorage.getItem('rt');
   const panel = document.getElementById('dbg-content');
   panel.innerHTML = [
     `<b>window.location.origin:</b> ${window.location.origin}`,
-    `<b>localStorage access_token:</b> ${at ? at.slice(0,40)+'…' : '<none>'}`,
-    `<b>localStorage refresh_token:</b> ${rt ? rt.slice(0,20)+'…' : '<none>'}`,
-    `<b>in-memory accessToken:</b> ${accessToken ? accessToken.slice(0,40)+'…' : '<none>'}`,
-    `<b>currentUser:</b> ${currentUser ? JSON.stringify(currentUser) : '<null>'}`,
+    `<b>loggedIn:</b> ${loggedIn}`,
   ].join('<br>');
   try {
-    const r = await fetch(`${BASE}/api/debug-auth`, {credentials:'include'});
-    const d = await r.json();
-    document.getElementById('dbg-extra').textContent = 'Server sees:\n' + JSON.stringify(d, null, 2);
+    const r = await fetch(`${BASE}/api/auth/me`, {credentials:'include'});
+    document.getElementById('dbg-extra').textContent = `/api/auth/me → HTTP ${r.status}`;
   } catch(e) {
-    document.getElementById('dbg-extra').textContent = 'Failed to reach /api/debug-auth: ' + e;
+    document.getElementById('dbg-extra').textContent = 'Failed: ' + e;
   }
 }
-async function testWorkspaces() {
+async function testStats() {
   const extra = document.getElementById('dbg-extra');
   try {
-    const r = await authFetch(`${BASE}/api/workspaces`);
+    const r = await authFetch(`${BASE}/api/stats`);
     const body = await r.text();
-    extra.textContent = `/api/workspaces → HTTP ${r.status}\n${body.slice(0,500)}`;
+    extra.textContent = `/api/stats → HTTP ${r.status}\n${body.slice(0,500)}`;
   } catch(e) {
     extra.textContent = 'Error: ' + e;
   }
