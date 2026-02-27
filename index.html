@@ -551,6 +551,18 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
 
 <div class="toast-container" id="toast-container"></div>
 
+<!-- Debug panel (only visible when ?debug=1 is in the URL) -->
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;border-top:2px solid #e040fb;padding:12px 16px;font-family:monospace;font-size:11px;color:#ccc;z-index:9999;max-height:220px;overflow-y:auto;">
+  <strong style="color:#e040fb">DEBUG PANEL</strong>
+  <button onclick="document.getElementById('debug-panel').style.display='none'" style="float:right;background:#333;border:none;color:#fff;cursor:pointer;padding:2px 8px;border-radius:4px">✕</button>
+  <br><br>
+  <div id="dbg-content">Loading...</div>
+  <br>
+  <button onclick="runDebug()" style="background:#333;border:1px solid #555;color:#ccc;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px">Refresh</button>
+  <button onclick="testWorkspaces()" style="background:#333;border:1px solid #555;color:#ccc;cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;margin-left:6px">Test /api/workspaces</button>
+  <pre id="dbg-extra" style="color:#aaa;margin-top:8px;white-space:pre-wrap;"></pre>
+</div>
+
 <script>
 const BASE = window.location.origin;
 let currentUser = null;
@@ -1295,6 +1307,41 @@ document.getElementById('qr-generate-btn').addEventListener('click',()=>{
   document.getElementById('qr-download-link').href=qrUrl;
   toast('QR generated!');
 });
+
+// ── Debug panel (activated by ?debug=1 in URL) ─────
+if (new URLSearchParams(window.location.search).get('debug') === '1') {
+  document.getElementById('debug-panel').style.display = 'block';
+  runDebug();
+}
+async function runDebug() {
+  const at = localStorage.getItem('at');
+  const rt = localStorage.getItem('rt');
+  const panel = document.getElementById('dbg-content');
+  panel.innerHTML = [
+    `<b>window.location.origin:</b> ${window.location.origin}`,
+    `<b>localStorage access_token:</b> ${at ? at.slice(0,40)+'…' : '<none>'}`,
+    `<b>localStorage refresh_token:</b> ${rt ? rt.slice(0,20)+'…' : '<none>'}`,
+    `<b>in-memory accessToken:</b> ${accessToken ? accessToken.slice(0,40)+'…' : '<none>'}`,
+    `<b>currentUser:</b> ${currentUser ? JSON.stringify(currentUser) : '<null>'}`,
+  ].join('<br>');
+  try {
+    const r = await fetch(`${BASE}/api/debug-auth`, {credentials:'include'});
+    const d = await r.json();
+    document.getElementById('dbg-extra').textContent = 'Server sees:\n' + JSON.stringify(d, null, 2);
+  } catch(e) {
+    document.getElementById('dbg-extra').textContent = 'Failed to reach /api/debug-auth: ' + e;
+  }
+}
+async function testWorkspaces() {
+  const extra = document.getElementById('dbg-extra');
+  try {
+    const r = await authFetch(`${BASE}/api/workspaces`);
+    const body = await r.text();
+    extra.textContent = `/api/workspaces → HTTP ${r.status}\n${body.slice(0,500)}`;
+  } catch(e) {
+    extra.textContent = 'Error: ' + e;
+  }
+}
 </script>
 </body>
 </html>

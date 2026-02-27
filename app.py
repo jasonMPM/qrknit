@@ -1179,7 +1179,11 @@ def debug_auth():
     if token and kind == 'bearer':
         payload = decode_access_token(token)
     return jsonify({
-        'cookies':            dict(request.cookies),
+        'request_host':      request.host,
+        'request_scheme':    request.scheme,
+        'remote_addr':       request.remote_addr,
+        'cookies':           dict(request.cookies),
+        'all_headers':       dict(request.headers),
         'x_auth_token_hdr':  request.headers.get('X-Auth-Token', '(not present)'),
         'auth_hdr':          request.headers.get('Authorization', '(not present)'),
         'token_source':      kind,
