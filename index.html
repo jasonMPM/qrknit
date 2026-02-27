@@ -326,6 +326,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
 /* ── PHASE 4: SELECT CHECKBOX ── */
 .select-check { display:none; align-items:center; margin-right:6px; flex-shrink:0; }
 .link-checkbox { width:15px; height:15px; cursor:pointer; accent-color:var(--accent); }
+
+/* ── PIN BUTTON ── */
+.pin-btn { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 4px; flex-shrink:0; line-height:1; opacity:.2; transition:opacity .15s; }
+.pin-btn:hover  { opacity:.6; }
+.pin-btn.pinned { opacity:1; color:var(--accent); }
+
+/* ── INLINE COPY ── */
+.copy-inline { background:none; border:1px solid transparent; cursor:pointer; color:var(--muted); font-size:10px; font-family:var(--font-mono); padding:2px 8px; border-radius:5px; flex-shrink:0; transition:all .15s; letter-spacing:.03em; }
+.copy-inline:hover { border-color:var(--border); color:var(--text); }
 </style>
 </head>
 <body>
@@ -694,6 +703,9 @@ function buildLinkItem(l) {
                ${selectedCodes.has(l.code)?'checked':''} onclick="event.stopPropagation()"
                onchange="toggleSelect('${l.code}')">
       </div>
+      <button class="pin-btn${l.is_pinned?' pinned':''}" id="pin-${l.code}"
+              title="${l.is_pinned?'Unpin':'Pin to top'}"
+              onclick="event.stopPropagation();togglePin('${l.code}',${l.is_pinned?1:0})">★</button>
       <div class="link-code">${l.code}</div>
       <div class="link-details">
         <div class="link-title">${escHtml(l.title||l.long_url)}</div>
@@ -702,6 +714,8 @@ function buildLinkItem(l) {
       </div>
       <div class="link-meta">
         <div class="link-clicks"><strong>${l.clicks}</strong> clicks${expNote}</div>
+        <button class="copy-inline" title="Copy short URL"
+                onclick="event.stopPropagation();copyToClipboard('${l.short_url}')">copy</button>
         <svg class="link-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5L7 10L12 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
     </div>
@@ -716,7 +730,7 @@ function buildLinkItem(l) {
       <div class="edit-form" id="edit-${l.code}">
         <h4>EDIT LINK</h4>
         <div class="edit-grid">
-          <div class="edit-full"><label class="field-label">DESTINATION URL</label><input class="field-input" id="edit-url-${l.code}" value="${escHtml(l.long_url)}"></div>
+          <div class="edit-full"><label class="field-label">DESTINATION URL</label><input class="field-input" id="edit-url-${l.code}" value="${escHtml(l.long_url)}" onblur="autoFetchTitleForEdit('${l.code}')"></div>
           <div><label class="field-label">TITLE</label><input class="field-input" id="edit-title-${l.code}" value="${escHtml(l.title||'')}"></div>
           <div><label class="field-label">EXPIRY DATE</label><input class="field-input" type="date" id="edit-expiry-${l.code}" value="${(l.expires_at||'').slice(0,10)}"></div>
           <div class="edit-full"><label class="field-label">TAGS (comma separated)</label><input class="field-input" id="edit-tags-${l.code}" value="${(l.tags||[]).map(t=>t.name).join(', ')}"></div>
@@ -775,6 +789,31 @@ async function deleteLink(code) {
 }
 
 function copyToClipboard(url) { navigator.clipboard.writeText(url); toast('Copied!'); }
+
+async function togglePin(code, currentPinned) {
+  const newPinned = currentPinned ? 0 : 1;
+  const resp = await authFetch(`${BASE}/api/links/${code}`, {
+    method: 'PATCH', body: JSON.stringify({is_pinned: newPinned === 1})
+  });
+  if (!resp.ok) { toast('Could not update pin', 'error'); return; }
+  toast(newPinned ? 'Pinned!' : 'Unpinned');
+  loadLinks();
+}
+
+async function autoFetchTitleForEdit(code) {
+  const urlEl   = document.getElementById(`edit-url-${code}`);
+  const titleEl = document.getElementById(`edit-title-${code}`);
+  if (!urlEl || !titleEl || titleEl.value.trim()) return;
+  const url = urlEl.value.trim();
+  if (!url.startsWith('http')) return;
+  const prev = titleEl.placeholder;
+  titleEl.placeholder = 'Fetching title…';
+  try {
+    const resp = await authFetch(`${BASE}/api/fetch-title?url=${encodeURIComponent(url)}`);
+    if (resp.ok) { const d = await resp.json(); if (d.title && !titleEl.value.trim()) titleEl.value = d.title; }
+  } catch(e) {}
+  titleEl.placeholder = prev;
+}
 
 // ── Analytics ──────────────────────────────────────
 async function loadAnalytics(code, days, btnEl) {
@@ -839,6 +878,23 @@ function renderBreakdown(rows) {
 document.getElementById('adv-toggle').addEventListener('click', function() { this.classList.toggle('open'); document.getElementById('adv-fields').classList.toggle('open'); });
 document.getElementById('shorten-btn').addEventListener('click', doShorten);
 document.getElementById('url-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doShorten(); });
+
+// Auto-fetch page title when URL field loses focus (only if title is empty)
+let _titleFetching = false;
+document.getElementById('url-input').addEventListener('blur', async function() {
+  const url     = this.value.trim();
+  const titleEl = document.getElementById('link-title');
+  if (!url.startsWith('http') || titleEl.value.trim() || _titleFetching) return;
+  _titleFetching = true;
+  const prev = titleEl.placeholder;
+  titleEl.placeholder = 'Fetching title…';
+  try {
+    const resp = await authFetch(`${BASE}/api/fetch-title?url=${encodeURIComponent(url)}`);
+    if (resp.ok) { const d = await resp.json(); if (d.title && !titleEl.value.trim()) titleEl.value = d.title; }
+  } catch(e) {}
+  titleEl.placeholder = prev;
+  _titleFetching = false;
+});
 
 // Tag input
 const tagInputEl = document.getElementById('tag-input');
