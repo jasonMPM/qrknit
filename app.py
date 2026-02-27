@@ -157,12 +157,29 @@ def generate_qr_png(data: str, size: int = 300, fg=(0,0,0), bg=(255,255,255),
         pil_img = pil_img.resize((size, size), Image.LANCZOS)
 
         if logo_bytes:
+            from PIL import ImageDraw
             logo = Image.open(io.BytesIO(logo_bytes)).convert('RGBA')
             logo_size = size // 4
             logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
-            pos = ((size - logo_size) // 2, (size - logo_size) // 2)
+
+            # Build a backing patch: solid bg-colored rounded rect with padding,
+            # so the logo sits cleanly over the QR without jagged module edges.
+            pad        = max(4, logo_size // 8)
+            patch_w    = logo_size + pad * 2
+            patch_h    = logo_size + pad * 2
+            patch      = Image.new('RGBA', (patch_w, patch_h), (0, 0, 0, 0))
+            draw       = ImageDraw.Draw(patch)
+            draw.rounded_rectangle(
+                [0, 0, patch_w - 1, patch_h - 1],
+                radius=pad,
+                fill=(*bg, 255),
+            )
+            patch.paste(logo, (pad, pad), logo)
+
             pil_img = pil_img.convert('RGBA')
-            pil_img.paste(logo, pos, logo)
+            px = (size - patch_w) // 2
+            py = (size - patch_h) // 2
+            pil_img.paste(patch, (px, py), patch)
             pil_img = pil_img.convert('RGB')
 
         buf = io.BytesIO()
