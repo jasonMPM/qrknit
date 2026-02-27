@@ -1,6 +1,8 @@
 # to.ALWISP — URL Shortener & QR Code Generator
 
-A self-hosted URL shortener with QR code generation, click analytics, user authentication, and team workspaces. Built on Python/Flask + SQLite. Runs as a Docker container — designed for Unraid but works anywhere Docker runs.
+A self-hosted URL shortener with QR code generation, click analytics, and tag-based link organization. Built on Python/Flask + SQLite. Runs as a Docker container — designed for Unraid but works anywhere Docker runs.
+
+Single-admin: one `ADMIN_PASSWORD` env var protects all write operations. No user accounts, no registration, no tokens to expire.
 
 ---
 
@@ -8,74 +10,52 @@ A self-hosted URL shortener with QR code generation, click analytics, user authe
 
 ### ✅ Phase 1 — Core MVP (Complete)
 - [x] URL shortening with random or custom codes
-- [x] Click tracking with timestamp, referrer, user-agent
+- [x] Click tracking (timestamp, referrer, user-agent)
 - [x] QR code generation per short link (backend-rendered PNG)
 - [x] Custom QR generator with color and size controls
 - [x] Link expiration support
 - [x] Dashboard with stats (total links, total clicks, avg clicks/link)
 - [x] Link management (view, copy, delete)
-- [x] Dark-mode frontend with polished UI
-- [x] REST API
+- [x] Dark-mode single-page frontend
 - [x] SQLite database (zero config, single file, Docker volume)
 - [x] Docker image with multi-stage build
 - [x] Unraid-ready container config
 
 ### ✅ Phase 2 — Analytics & Management (Complete)
-- [x] Click analytics chart (daily clicks over time, per-link)
-- [x] Referrer breakdown
+- [x] Per-link click analytics chart (daily clicks over time)
+- [x] Referrer breakdown (Google, Facebook, Twitter/X, Direct, etc.)
 - [x] Device/browser breakdown from User-Agent parsing
-- [x] Link editing (change destination, update expiry)
+- [x] Link editing (change destination URL, title, expiry)
 - [x] Search/filter links in dashboard
 - [x] Link tags/categories
 
-### ✅ Phase 3 — Auth & Multi-user (Complete)
-- [x] User accounts with PBKDF2-hashed passwords
-- [x] JWT access tokens (8h) + refresh tokens (30d) with rotation
-- [x] Invite-only registration — admin generates invite links
-- [x] First registered user automatically becomes admin
-- [x] Per-user link ownership and dashboards
-- [x] API key management (shown once, stored as hash)
-- [x] Role-based access (admin / member)
-- [x] Team workspaces — share links across members
-- [x] Admin panel — manage users, invites, and all links
+### ✅ Phase 3 — Auth (Complete)
+- [x] Single-admin password protection via `ADMIN_PASSWORD` env var
+- [x] Flask signed session cookie (30-day, HttpOnly)
+- [x] No accounts, no registration, no tokens to expire
+- [x] Works correctly behind Cloudflare and Nginx Proxy Manager
 
-### 🔜 Phase 4 — Integrations & Power Features
-- [ ] QR code with embedded logo/icon
-- [ ] Custom domains per workspace
-- [ ] Webhook on click events
-- [ ] UTM parameter auto-append
-- [ ] Browser extension integration
-
-### 🔜 Phase 5 — Production Hardening
-- [ ] Rate limiting per IP
-- [ ] PostgreSQL/MySQL backend option
-- [ ] Redis caching for hot links
-- [ ] Bulk link import via CSV
+### 🔜 Phase 4 — TBD
 
 ---
 
-## 🚀 First-Time Setup
+## 🚀 Setup
 
-On a fresh install, **the first registered account becomes admin** — no invite token needed.
+### Required environment variables
 
-1. Navigate to your instance URL
-2. Click **Register** and create your admin account
-3. From the **Admin** panel, generate invite links to add other users
+| Variable | Description |
+|---|---|
+| `SECRET_KEY` | Long random string — signs session cookies |
+| `ADMIN_PASSWORD` | Password to access the dashboard |
 
-> **Important:** Set a strong, unique `SECRET_KEY` before deploying. All JWT tokens are signed with this key — changing it after users have logged in will invalidate all active sessions.
+Generate a strong `SECRET_KEY`:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
 
----
-
-## 🐳 Docker Deployment
-
-### Option A — Build locally
+### Docker run
 
 ```bash
-# Generate a random SECRET_KEY first:
-python3 -c "import secrets; print(secrets.token_hex(32))"
-
-docker build -t sniplink:latest .
-
 docker run -d \
   --name sniplink \
   --restart unless-stopped \
@@ -83,38 +63,36 @@ docker run -d \
   -v sniplink-data:/app/data \
   -e BASE_URL=https://to.alwisp.com \
   -e SECRET_KEY=your-generated-key-here \
+  -e ADMIN_PASSWORD=your-strong-password \
   sniplink:latest
 ```
 
-### Option B — Docker Compose
+### Docker Compose
 
 ```bash
-# Edit docker-compose.yml first — set BASE_URL and SECRET_KEY
-docker compose up -d
+# Edit docker-compose.yml — set BASE_URL, SECRET_KEY, ADMIN_PASSWORD
+docker compose up -d --build
 ```
 
 ---
 
-## 🖥 Unraid Setup (Step-by-Step)
+## 🖥 Unraid Setup
 
-### Step 1 — Get the image onto Unraid
+### Step 1 — Build the image
 
-**Option 1: Build directly on Unraid**
+**Option A: Build directly on Unraid**
 ```bash
 cd /mnt/user/appdata/sniplink-src
 docker build -t sniplink:latest .
 ```
 
-**Option 2: Push to Docker Hub (recommended)**
+**Option B: Push to Docker Hub**
 ```bash
 docker build -t yourdockerhubusername/sniplink:latest .
 docker push yourdockerhubusername/sniplink:latest
 ```
-Then use `yourdockerhubusername/sniplink:latest` as the repository in Unraid.
 
----
-
-### Step 2 — Add container in Unraid UI
+### Step 2 — Add container in Unraid Docker UI
 
 1. Go to **Docker** tab → **Add Container**
 2. Fill in:
@@ -132,36 +110,31 @@ Then use `yourdockerhubusername/sniplink:latest` as the repository in Unraid.
 | Key | Value | Notes |
 |---|---|---|
 | `BASE_URL` | `https://to.alwisp.com` | Your public domain |
-| `SECRET_KEY` | *(long random string)* | **Required — never leave as default** |
+| `SECRET_KEY` | *(long random string)* | **Required** |
+| `ADMIN_PASSWORD` | *(your password)* | **Required** |
+| `COOKIE_SECURE` | `false` | Keep `false` when behind a proxy (Cloudflare, NPM). Set `true` only if Flask receives HTTPS directly. |
 | `DEBUG` | `false` | Keep false in production |
 
-> Generate a strong key: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+### Step 3 — Reverse proxy
 
-4. Click **Apply**
+#### Cloudflare (current setup)
+- Point your DNS A record to your public IP
+- Enable **Always Use HTTPS** in Cloudflare dashboard (SSL/TLS → Edge Certificates) to ensure all browsers land on HTTPS
+- Keep `COOKIE_SECURE=false` — Cloudflare terminates TLS before the request reaches Flask
 
----
-
-### Step 3 — Reverse proxy via Nginx Proxy Manager
-
-If you're using Nginx Proxy Manager on Unraid (the most common setup):
-
-1. **Proxy Hosts** → **Add Proxy Host**
-2. Set:
-   - Domain: `to.alwisp.com`
-   - Forward Hostname/IP: your Unraid LAN IP (e.g. `192.168.1.100`)
-   - Forward Port: `5000`
-3. On the **SSL** tab — request a free Let's Encrypt certificate
-4. Ensure your DNS A record for `to.alwisp.com` points to your public IP
-
-> **Note:** NPM strips `Authorization` headers by default. The app uses a custom `X-Auth-Token` header instead to bypass this — no special NPM configuration needed.
-
----
+#### Nginx Proxy Manager
+- Add a proxy host: domain → your Unraid LAN IP:5000
+- Request a Let's Encrypt certificate on the SSL tab
+- Keep `COOKIE_SECURE=false` — same reason as Cloudflare
 
 ### Step 4 — Verify
 
 ```bash
 docker inspect --format='{{.State.Health.Status}}' sniplink
 # Should return: healthy
+
+curl https://to.alwisp.com/api/health
+# {"status":"ok"}
 ```
 
 ---
@@ -183,61 +156,37 @@ sniplink/
 
 ## 🔌 API Reference
 
-All authenticated endpoints require either:
-- `X-Auth-Token: <jwt>` header, or
-- `X-API-Key: <key>` header
+All write endpoints require an active session (log in via the web UI first, or POST `/api/auth/login`).
 
 ### Auth
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/auth/register` | — | Register (invite required after first user) |
-| POST | `/api/auth/login` | — | Login, returns access + refresh tokens |
-| POST | `/api/auth/refresh` | — | Refresh access token |
-| POST | `/api/auth/logout` | ✓ | Invalidate refresh token |
-| GET | `/api/auth/me` | ✓ | Current user info |
-| GET | `/api/auth/keys` | ✓ | List API keys |
-| POST | `/api/auth/keys` | ✓ | Create API key |
-| DELETE | `/api/auth/keys/:id` | ✓ | Revoke API key |
+| POST | `/api/auth/login` | — | Login with `{"password": "..."}`, sets session cookie |
+| POST | `/api/auth/logout` | ✓ | Clear session |
+| GET | `/api/auth/me` | ✓ | Returns `{"authenticated": true}` |
 
 ### Links
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/shorten` | optional | Shorten a URL |
-| GET | `/api/links` | optional | List links (own links when authenticated) |
-| GET | `/api/links/:code` | optional | Link detail |
-| PATCH | `/api/links/:code` | ✓ | Edit link (owner or admin) |
-| DELETE | `/api/links/:code` | ✓ | Delete link (owner or admin) |
-| GET | `/api/links/:code/analytics` | optional | Click analytics |
-
-### Workspaces
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/workspaces` | ✓ | List your workspaces |
-| POST | `/api/workspaces` | ✓ | Create workspace |
-| GET | `/api/workspaces/:id/members` | ✓ | List members |
-| POST | `/api/workspaces/:id/members` | ✓ | Add member |
-
-### Admin
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/admin/users` | admin | List all users |
-| PATCH | `/api/admin/users/:id` | admin | Edit user (role, active status) |
-| GET | `/api/admin/users/:id/links` | admin | User's links |
-| POST | `/api/admin/invites` | admin | Generate invite link |
-| GET | `/api/admin/invites` | admin | List all invites |
+| POST | `/api/shorten` | ✓ | Shorten a URL |
+| GET | `/api/links` | ✓ | List links (supports `?q=`, `?tag=`, `?page=`, `?per_page=`) |
+| GET | `/api/links/:code` | ✓ | Link detail |
+| PATCH | `/api/links/:code` | ✓ | Edit link (url, title, expires_at, tags) |
+| DELETE | `/api/links/:code` | ✓ | Delete link |
+| GET | `/api/links/:code/analytics` | ✓ | Click analytics (supports `?days=7\|30\|90`) |
 
 ### Utilities
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| GET | `/api/stats` | optional | Aggregate stats |
-| GET | `/api/tags` | optional | All tags |
+| GET | `/api/stats` | ✓ | Total links, total clicks, clicks/7d, top links |
+| GET | `/api/tags` | ✓ | All tags with link counts |
 | GET | `/api/qr/:code` | — | QR PNG for a short link |
-| GET | `/api/qr/custom` | — | QR for any URL |
+| GET | `/api/qr/custom` | — | QR PNG for any URL (`?url=`, `?fg=`, `?bg=`, `?size=`) |
+| GET | `/api/health` | — | Health check (`{"status":"ok"}`) |
+| GET | `/:code` | — | Redirect to destination URL |
 
 ---
 
@@ -245,13 +194,13 @@ All authenticated endpoints require either:
 
 | Variable | Default | Description |
 |---|---|---|
-| `BASE_URL` | `https://to.alwisp.com` | Public URL of your instance |
+| `BASE_URL` | `http://localhost:5000` | Public URL of your instance |
 | `PORT` | `5000` | Port Gunicorn listens on |
 | `DEBUG` | `false` | Flask debug mode (keep false in production) |
-| `SECRET_KEY` | *(none — required)* | JWT signing key — set a long random string |
+| `SECRET_KEY` | *(none — required)* | Signs session cookies — use a long random string |
+| `ADMIN_PASSWORD` | *(none — required)* | Password for the dashboard |
 | `DB_PATH` | `/app/data/sniplink.db` | SQLite file location (inside Docker volume) |
-| `JWT_ACCESS_EXPIRY` | `28800` | Access token lifetime in seconds (default: 8h) |
-| `JWT_REFRESH_EXPIRY` | `2592000` | Refresh token lifetime in seconds (default: 30d) |
+| `COOKIE_SECURE` | `false` | Set `true` only if Flask receives HTTPS directly (not behind a proxy) |
 
 ---
 
@@ -266,9 +215,10 @@ docker run -d --name sniplink --restart unless-stopped \
   -p 5000:5000 -v sniplink-data:/app/data \
   -e BASE_URL=https://to.alwisp.com \
   -e SECRET_KEY=your-secret \
+  -e ADMIN_PASSWORD=your-password \
   sniplink:latest
 ```
 
 On Unraid, click **Force Update** on the container in the Docker tab.
 
-> **After updating:** Existing sessions remain valid as long as `SECRET_KEY` stays the same. If you change `SECRET_KEY`, all logged-in users will be asked to log in again — this is expected behavior.
+> Sessions survive container restarts as long as `SECRET_KEY` stays the same. If you change `SECRET_KEY`, the browser session cookie will be invalid and you'll need to log in again — this is expected.
