@@ -274,31 +274,54 @@ def get_token_from_request():
     return (None, None)
 
 def resolve_user():
-    """Return user row or None."""
-    kind, token = get_token_from_request()
-    if not token:
-        return None
-    if kind == 'bearer':
-        payload = decode_access_token(token)
-        if not payload or payload.get('type') != 'access':
-            return None
-        with get_db() as conn:
-            return conn.execute(
-                'SELECT * FROM users WHERE id = ? AND is_active = 1', (payload['sub'],)
-            ).fetchone()
-    if kind == 'apikey':
-        key_hash = hashlib.sha256(token.encode()).hexdigest()
-        with get_db() as conn:
-            key_row = conn.execute(
-                'SELECT * FROM api_keys WHERE key_hash = ? AND is_active = 1', (key_hash,)
-            ).fetchone()
-            if not key_row:
-                return None
-            conn.execute('UPDATE api_keys SET last_used = ? WHERE id = ?',
-                         (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), key_row['id']))
-            return conn.execute(
-                'SELECT * FROM users WHERE id = ? AND is_active = 1', (key_row['user_id'],)
-            ).fetchone()
+    """Return user row or None.
+
+    Tries every available credential source in priority order (cookie →
+    X-Auth-Token header → Authorization: Bearer → X-API-Key) and falls
+    through to the next source whenever a token is present but invalid.
+    This prevents a stale/expired cookie from blocking a valid bearer token.
+    """
+    # Build ordered list of (kind, raw_token) to attempt
+    sources = []
+    cookie_token = request.cookies.get('access_token', '').strip()
+    if cookie_token:
+        sources.append(('bearer', cookie_token))
+    header_token = request.headers.get('X-Auth-Token', '').strip()
+    if header_token:
+        sources.append(('bearer', header_token))
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        sources.append(('bearer', auth_header[7:].strip()))
+    api_key = request.headers.get('X-API-Key', '').strip()
+    if api_key:
+        sources.append(('apikey', api_key))
+
+    for kind, token in sources:
+        if kind == 'bearer':
+            payload = decode_access_token(token)
+            if not payload or payload.get('type') != 'access':
+                continue          # token present but invalid — try next source
+            with get_db() as conn:
+                user = conn.execute(
+                    'SELECT * FROM users WHERE id = ? AND is_active = 1', (payload['sub'],)
+                ).fetchone()
+            if user:
+                return user
+        elif kind == 'apikey':
+            key_hash = hashlib.sha256(token.encode()).hexdigest()
+            with get_db() as conn:
+                key_row = conn.execute(
+                    'SELECT * FROM api_keys WHERE key_hash = ? AND is_active = 1', (key_hash,)
+                ).fetchone()
+                if not key_row:
+                    continue
+                conn.execute('UPDATE api_keys SET last_used = ? WHERE id = ?',
+                             (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), key_row['id']))
+                user = conn.execute(
+                    'SELECT * FROM users WHERE id = ? AND is_active = 1', (key_row['user_id'],)
+                ).fetchone()
+            if user:
+                return user
     return None
 
 def login_required(f):
@@ -1174,22 +1197,37 @@ def debug_auth():
     """
     if os.environ.get('DEBUG', 'false').lower() != 'true':
         return jsonify({'error': 'Only available when DEBUG=true'}), 403
-    kind, token = get_token_from_request()
-    payload = None
-    if token and kind == 'bearer':
-        payload = decode_access_token(token)
+
+    # Report on each individual source
+    sources_report = {}
+    for name, raw in [
+        ('cookie',       request.cookies.get('access_token', '')),
+        ('x_auth_token', request.headers.get('X-Auth-Token', '')),
+        ('authorization', request.headers.get('Authorization', '')[7:]
+                          if request.headers.get('Authorization', '').startswith('Bearer ') else ''),
+    ]:
+        if raw.strip():
+            pl = decode_access_token(raw.strip())
+            sources_report[name] = {
+                'present': True,
+                'valid':   bool(pl),
+                'payload': pl,
+            }
+        else:
+            sources_report[name] = {'present': False}
+
+    # What resolve_user() would actually use
+    resolved = resolve_user()
+
     return jsonify({
         'request_host':      request.host,
         'request_scheme':    request.scheme,
         'remote_addr':       request.remote_addr,
         'cookies':           dict(request.cookies),
         'all_headers':       dict(request.headers),
-        'x_auth_token_hdr':  request.headers.get('X-Auth-Token', '(not present)'),
-        'auth_hdr':          request.headers.get('Authorization', '(not present)'),
-        'token_source':      kind,
-        'token_present':     bool(token),
-        'token_valid':       bool(payload),
-        'token_payload':     payload,
+        'token_sources':     sources_report,
+        'resolved_user_id':  resolved['id'] if resolved else None,
+        'auth_would_pass':   bool(resolved),
         'cookie_secure_cfg': COOKIE_SECURE,
     })
 
