@@ -230,8 +230,15 @@ def format_link(row, conn):
 # ─────────────────────────────────────────────
 # Auth Routes
 # ─────────────────────────────────────────────
+# Health check (public — used by Docker healthcheck)
+# ─────────────────────────────────────────────
 
-@app.route('/api/auth/login', methods=['POST'])
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'ok'})
+
+
+
 def login():
     data     = request.get_json(silent=True) or {}
     password = data.get('password') or ''
