@@ -35,7 +35,20 @@ Single-admin: one `ADMIN_PASSWORD` env var protects all write operations. No use
 - [x] No accounts, no registration, no tokens to expire
 - [x] Works correctly behind Cloudflare and Nginx Proxy Manager
 
-### 🔜 Phase 4 — TBD
+### 🔜 Phase 4 — QR & Link Management
+- [ ] QR code logo/icon embedding (upload image, centered overlay)
+- [ ] QR dot shape presets (rounded, dots, classy, extra-rounded)
+- [ ] Bulk link operations (bulk delete, bulk tag, bulk expire)
+- [ ] Link folders/groups (organize without full workspaces)
+- [ ] CSV import — paste or upload a spreadsheet of URLs to shorten in batch
+- [ ] CSV export — download all links + stats
+
+### 🔜 Phase 5 — Multi-user (Simplified)
+- [ ] Per-user accounts with password (no invites, no workspaces)
+- [ ] Admin creates accounts directly (no self-registration)
+- [ ] Each user sees only their own links
+- [ ] Admin sees all links
+- [ ] Simple session auth (same approach as current single-admin)
 
 ---
 
