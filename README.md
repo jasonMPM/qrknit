@@ -120,15 +120,15 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 ```bash
 docker run -d \
-  --name sniplink \
+  --name qrknit \
   --restart unless-stopped \
   -p 5000:5000 \
-  -v sniplink-data:/app/data \
+  -v qrknit-data:/app/data \
   -e BASE_URL=https://yourdomain.com \
   -e APP_NAME=to.ALWISP \
   -e SECRET_KEY=your-generated-key-here \
   -e ADMIN_PASSWORD=your-strong-password \
-  sniplink:latest
+  qrknit:latest
 ```
 
 ### Docker Compose
@@ -146,14 +146,14 @@ docker compose up -d --build
 
 **Option A: Build directly on Unraid**
 ```bash
-cd /mnt/user/appdata/sniplink-src
-docker build -t sniplink:latest .
+cd /mnt/user/appdata/qrknit-src
+docker build -t qrknit:latest .
 ```
 
 **Option B: Push to Docker Hub**
 ```bash
-docker build -t yourdockerhubusername/sniplink:latest .
-docker push yourdockerhubusername/sniplink:latest
+docker build -t yourdockerhubusername/qrknit:latest .
+docker push yourdockerhubusername/qrknit:latest
 ```
 
 ### Step 2 — Add container in Unraid Docker UI
@@ -163,11 +163,11 @@ docker push yourdockerhubusername/sniplink:latest
 
 | Field | Value |
 |---|---|
-| **Name** | `sniplink` |
-| **Repository** | `sniplink:latest` or your Docker Hub image |
+| **Name** | `qrknit` |
+| **Repository** | `qrknit:latest` or your Docker Hub image |
 | **Network Type** | `Bridge` |
 | **Port Mapping** | Host `5000` → Container `5000` |
-| **Path (Volume)** | Host `/mnt/user/appdata/sniplink` → Container `/app/data` |
+| **Path (Volume)** | Host `/mnt/user/appdata/qrknit` → Container `/app/data` |
 
 3. Add **Environment Variables**:
 
@@ -195,7 +195,7 @@ docker push yourdockerhubusername/sniplink:latest
 ### Step 4 — Verify
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' sniplink
+docker inspect --format='{{.State.Health.Status}}' qrknit
 # Should return: healthy
 
 curl https://yourdomain.com/api/health
@@ -207,7 +207,7 @@ curl https://yourdomain.com/api/health
 ## 🗂 Project Structure
 
 ```
-sniplink/
+qrknit/
 ├── app.py              # Flask backend — all routes and logic
 ├── index.html          # Single-page frontend (served by Flask)
 ├── requirements.txt    # Python dependencies
@@ -280,7 +280,7 @@ All write endpoints require an active session (log in via the web UI first, or P
 | `SECRET_KEY` | *(none — required)* | Signs session cookies — use a long random string |
 | `ADMIN_PASSWORD` | *(none — required)* | Password for the admin account — upserted on every startup |
 | `ADMIN_USERNAME` | `admin` | Username for the admin account |
-| `DB_PATH` | `/app/data/sniplink.db` | SQLite file location (inside Docker volume) |
+| `DB_PATH` | `/app/data/qrknit.db` | SQLite file location (inside Docker volume) |
 | `COOKIE_SECURE` | `false` | Set `true` only if Flask receives HTTPS directly (not behind a proxy) |
 
 ---
@@ -290,15 +290,15 @@ All write endpoints require an active session (log in via the web UI first, or P
 Your data lives in the Docker volume and is preserved across updates.
 
 ```bash
-docker build -t sniplink:latest .
-docker stop sniplink && docker rm sniplink
-docker run -d --name sniplink --restart unless-stopped \
-  -p 5000:5000 -v sniplink-data:/app/data \
+docker build -t qrknit:latest .
+docker stop qrknit && docker rm qrknit
+docker run -d --name qrknit --restart unless-stopped \
+  -p 5000:5000 -v qrknit-data:/app/data \
   -e BASE_URL=https://yourdomain.com \
   -e APP_NAME=to.ALWISP \
   -e SECRET_KEY=your-secret \
   -e ADMIN_PASSWORD=your-password \
-  sniplink:latest
+  qrknit:latest
 ```
 
 On Unraid, click **Force Update** on the container in the Docker tab.
