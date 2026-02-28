@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────
-# SnipLink — Dockerfile
+# QRknit — Dockerfile
 # Multi-stage build for a lean production image
 # ─────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ RUN pip install --upgrade pip && \
 # ── Stage 2: Runtime image ────────────────────
 FROM python:3.12-slim AS runtime
 
-LABEL maintainer="SnipLink"
+LABEL maintainer="QRknit"
 LABEL description="Self-hosted URL shortener and QR code generator"
 LABEL version="1.0"
 
@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN groupadd -r sniplink && useradd -r -g sniplink -d /app -s /sbin/nologin sniplink
+RUN groupadd -r qrknit && useradd -r -g qrknit -d /app -s /sbin/nologin qrknit
 
 WORKDIR /app
 
@@ -40,11 +40,11 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 
 # Copy application files
-COPY --chown=sniplink:sniplink app.py .
-COPY --chown=sniplink:sniplink index.html .
+COPY --chown=qrknit:qrknit app.py .
+COPY --chown=qrknit:qrknit index.html .
 
 # Data volume — SQLite DB lives here
-# Map to host path in Unraid: /mnt/user/appdata/sniplink → /app/data
+# Map to host path in Unraid: /mnt/user/appdata/qrknit → /app/data
 VOLUME ["/app/data"]
 
 EXPOSE 5000
@@ -54,7 +54,7 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
 
-USER sniplink
+USER qrknit
 
 # Non-sensitive defaults only — SECRET_KEY and ADMIN_PASSWORD must be passed at runtime
 ENV BASE_URL=http://localhost:5000 \
@@ -62,7 +62,7 @@ ENV BASE_URL=http://localhost:5000 \
     ADMIN_USERNAME=admin \
     PORT=5000 \
     DEBUG=false \
-    DB_PATH=/app/data/sniplink.db
+    DB_PATH=/app/data/qrknit.db
 
 # Start with Gunicorn
 CMD ["python3", "-m", "gunicorn", \

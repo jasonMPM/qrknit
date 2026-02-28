@@ -30,7 +30,7 @@ if not ADMIN_PASSWORD:
 
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 
-DB_PATH  = os.environ.get('DB_PATH',  '/app/data/sniplink.db')
+DB_PATH  = os.environ.get('DB_PATH',  '/app/data/qrknit.db')
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000').rstrip('/')
 APP_NAME = os.environ.get('APP_NAME', 'to.ALWISP')
 
@@ -623,7 +623,7 @@ def fetch_title():
         return jsonify({'title': ''})
     try:
         req = urllib_req.Request(url, headers={
-            'User-Agent': 'Mozilla/5.0 (compatible; Snippy-title-fetcher/1.0)',
+            'User-Agent': 'Mozilla/5.0 (compatible; QRknit-title-fetcher/1.0)',
             'Accept': 'text/html',
         })
         with urllib_req.urlopen(req, timeout=5) as resp:

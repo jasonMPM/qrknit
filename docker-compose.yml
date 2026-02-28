@@ -1,15 +1,15 @@
 # ─────────────────────────────────────────────
-# SnipLink — docker-compose.yml
+# QRknit — docker-compose.yml
 # For local dev or non-Unraid deployments
 # On Unraid: use the Docker tab UI instead
 # ─────────────────────────────────────────────
 
 services:
-  sniplink:
+  qrknit:
     build: .
     # Or use a pre-built image from Docker Hub:
-    # image: yourdockerhubuser/sniplink:latest
-    container_name: sniplink
+    # image: yourdockerhubuser/qrknit:latest
+    container_name: qrknit
     restart: unless-stopped
 
     ports:
@@ -17,7 +17,7 @@ services:
                           # e.g. "80:5000" to serve on port 80
 
     volumes:
-      - sniplink-data:/app/data   # Persistent SQLite database
+      - qrknit-data:/app/data   # Persistent SQLite database
 
     environment:
       - BASE_URL=https://yourdomain.com     # ← Your public URL (domain or subdomain)
@@ -44,5 +44,5 @@ services:
       start_period: 15s
 
 volumes:
-  sniplink-data:
+  qrknit-data:
     driver: local
