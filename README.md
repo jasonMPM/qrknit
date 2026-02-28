@@ -52,7 +52,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 **1. Get the source**
 ```bash
-git clone https://github.com/yourusername/qrknit.git
+git clone https://github.com/jasonMPM/qrknit.git
 cd qrknit
 ```
 
@@ -69,7 +69,7 @@ docker run -d \
   -p 5000:5000 \
   -v qrknit-data:/app/data \
   -e BASE_URL=https://yourdomain.com \
-  -e APP_NAME=MyLinks \
+  -e APP_NAME=My.Links \
   -e SECRET_KEY=your-generated-key-here \
   -e ADMIN_PASSWORD=your-strong-password \
   qrknit:latest
@@ -83,14 +83,14 @@ Open `http://localhost:5000` (or your domain) and log in with `admin` / your `AD
 
 **1. Get the source**
 ```bash
-git clone https://github.com/yourusername/qrknit.git
+git clone https://github.com/jasonMPM/qrknit.git
 cd qrknit
 ```
 
 **2. Edit `docker-compose.yml`** — set at minimum:
 ```yaml
 - BASE_URL=https://yourdomain.com
-- APP_NAME=MyLinks
+- APP_NAME=My.Links
 - SECRET_KEY=your-generated-key-here
 - ADMIN_PASSWORD=your-strong-password
 ```
@@ -109,7 +109,7 @@ docker compose up -d --build
 Open the Unraid terminal and run:
 ```bash
 cd /mnt/user/appdata
-git clone https://github.com/yourusername/qrknit.git qrknit-src
+git clone https://github.com/jasonMPM/qrknit.git qrknit-src
 ```
 
 Or upload the source files manually to `/mnt/user/appdata/qrknit-src/`.
@@ -139,7 +139,7 @@ Add the following **Environment Variables**:
 | Variable | Value | Notes |
 |---|---|---|
 | `BASE_URL` | `https://yourdomain.com` | Your public domain or subdomain |
-| `APP_NAME` | `MyLinks` | Display name shown in the UI — names with a dot (e.g. `to.mysite.io`) are split and styled automatically |
+| `APP_NAME` | `My.Links` | Display name shown in the UI — names with a dot (e.g. `to.mysite.io`) are split and styled automatically |
 | `SECRET_KEY` | *(generated above)* | **Required** — signs session cookies |
 | `ADMIN_PASSWORD` | *(your password)* | **Required** — admin account password |
 | `ADMIN_USERNAME` | `admin` | Admin username (default: `admin`) |
@@ -266,7 +266,7 @@ All write endpoints require an active session (log in via the web UI or `POST /a
 | Variable | Default | Description |
 |---|---|---|
 | `BASE_URL` | `http://localhost:5000` | Public URL of your instance — used in short links and QR codes |
-| `APP_NAME` | `to.ALWISP` | Display name in the header, hero, login modal, and page title. Names with a dot are split and styled automatically. |
+| `APP_NAME` | `My.Links` | Display name in the header, hero, login modal, and page title. Names with a dot are split and styled automatically. |
 | `SECRET_KEY` | *(required)* | Signs session cookies — use a long random string |
 | `ADMIN_PASSWORD` | *(required)* | Admin account password — upserted on every startup |
 | `ADMIN_USERNAME` | `admin` | Admin account username |
