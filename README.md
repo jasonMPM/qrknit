@@ -35,20 +35,20 @@ Single-admin: one `ADMIN_PASSWORD` env var protects all write operations. No use
 - [x] No accounts, no registration, no tokens to expire
 - [x] Works correctly behind Cloudflare and Nginx Proxy Manager
 
-### 🔜 Phase 4 — QR & Link Management
+### ✅ Phase 4 — QR & Link Management (Complete)
 - [x] QR code logo/icon embedding (upload image, centered overlay)
 - [x] QR dot shape presets (rounded, dots, vertical bars, horizontal bars)
 - [x] Bulk link operations (bulk delete, bulk tag, bulk expire)
 - [x] CSV import — paste or upload a spreadsheet of URLs to shorten in batch
 - [x] CSV export — download all links + stats
-- [ ] Link folders/groups (organize without full workspaces) — deferred
+- [ ] Link folders/groups — deferred to a dedicated organisation phase
 
 ### ✅ Phase 5 — UX Improvements (Complete)
 - [x] Pin / favorites — star any link to float it to the top of the dashboard list
 - [x] One-click copy — inline copy button on every link row, no expand needed
 - [x] Auto-fetch title — URL field blur triggers a server-side title fetch (`og:title` → `<title>`); pre-fills the title field when empty (works in both the Shorten form and the edit form)
 - [x] Inline QR thumbnail — 80px QR preview inside every expanded link row (lazy-loaded)
-- [x] Copy QR to clipboard — one click writes the QR PNG to the clipboard via Clipboard API
+- [x] Copy QR to clipboard — writes QR PNG to clipboard via Clipboard API; button is only rendered on browsers that support it (Chrome/Edge), hidden elsewhere
 - [x] Customize QR shortcut — jump directly to the QR tab with the short URL pre-filled
 
 ### ✅ Phase 6 — Deployment Portability (Complete)
@@ -60,12 +60,41 @@ Single-admin: one `ADMIN_PASSWORD` env var protects all write operations. No use
 - [x] CSV export filename derived from `APP_NAME` slug (e.g. `to-alwisp-export.csv`)
 - [x] All hardcoded domain references removed from `docker-compose.yml` and `Dockerfile`
 
-### 🔜 Phase 7 — Multi-user (Simplified)
-- [ ] Per-user accounts with password (no invites, no workspaces)
-- [ ] Admin creates accounts directly (no self-registration)
-- [ ] Each user sees only their own links
-- [ ] Admin sees all links
-- [ ] Simple session auth (same approach as current single-admin)
+### ✅ Phase 7 — UI Polish (Complete)
+- [x] Accent colour changed from green to teal/blue palette (`#00b8d4` → `#1a52c8`) matched to brand image
+- [x] Teal → blue gradient applied to hero title, primary buttons, and background ambient glow
+- [x] Text contrast improved — `--text` and `--muted` tokens nudged brighter across all 20 hardcoded rgba instances
+
+---
+
+## 💡 Suggested Next Phases
+
+### Phase 8 — Analytics Deep-Dive
+Upgrade the analytics story from basic charts to actionable data.
+- [ ] **Geographic breakdown** — country/city from click IP via a lightweight free API (e.g. `ip-api.com`); stored at click time, shown as a flag + bar chart
+- [ ] **Hourly heatmap** — 7×24 grid showing click density by day-of-week and hour-of-day; reveals when your audience is active
+- [ ] **Dashboard-wide click chart** — aggregate daily clicks across all links on the main dashboard, not just per link
+- [ ] **Click data CSV export** — download raw click events (timestamp, referrer, country, device) per link or for all links
+
+### Phase 9 — Power Features
+Features for more advanced / programmatic use.
+- [ ] **API key authentication** — generate a Bearer token in the UI; allows curl / scripts / integrations to use the API without a browser session
+- [ ] **Password-protected links** — optional passphrase on a short link; visitors see a prompt before the redirect fires
+- [ ] **UTM parameter builder** — integrated into the create form; pick source/medium/campaign and have them appended to the destination URL automatically
+- [ ] **Custom 404 / expired pages** — branded HTML page instead of a bare redirect to `/?error=`; configurable message via env var
+
+### Phase 10 — Link Organisation
+Structure and housekeeping for large link collections.
+- [ ] **Folders / groups** — logical containers for links (the item deferred from Phase 4); shown as a collapsible sidebar filter
+- [ ] **Duplicate link** — clone an existing link with a new code in one click; useful for A/B variants
+- [ ] **Link health check** — background job that periodically fetches destination URLs and flags 4xx/5xx responses with a warning badge
+- [ ] **Custom redirect type** — choose 301 (permanent, browser-cached) vs 302 (temporary) per link; currently all links are 301
+
+### Phase 11 — Multi-user
+_(already planned)_
+- [ ] Per-user accounts with password — admin creates accounts directly, no self-registration
+- [ ] Each user sees only their own links; admin sees all
+- [ ] Simple session auth — same cookie approach as the current single-admin model
 
 ---
 
