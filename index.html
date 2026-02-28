@@ -246,6 +246,10 @@ main { position:relative; z-index:1; }
 .tag-pill button:hover { opacity:1; }
 .tag-input-inner { background:none; border:none; color:var(--text); font-family:var(--font-mono); font-size:13px; outline:none; min-width:80px; flex:1; }
 .tag-input-inner::placeholder { color:var(--muted); }
+.tag-suggestions { position:absolute; top:100%; left:0; right:0; background:var(--surface2); border:1px solid var(--border); border-radius:8px; margin-top:4px; max-height:160px; overflow-y:auto; z-index:200; display:none; box-shadow:0 4px 16px rgba(0,0,0,.3); }
+.tag-suggestions.open { display:block; }
+.tag-suggestion-item { padding:6px 12px; cursor:pointer; font-family:var(--font-mono); font-size:12px; color:var(--text); transition:background .1s; }
+.tag-suggestion-item:hover, .tag-suggestion-item.active { background:rgba(var(--accent-rgb),.15); color:var(--accent); }
 
 /* ── RESULT CARD ── */
 .result-card { background:linear-gradient(135deg,rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.03)); border:1px solid rgba(var(--accent-rgb),.2); border-radius:16px; padding:22px; margin-top:18px; display:none; animation:slideIn .4s cubic-bezier(.34,1.56,.64,1); }
@@ -445,11 +449,12 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:16px;
         <div><label class="field-label">CUSTOM CODE</label><input class="field-input" id="custom-code" placeholder="e.g. mylink" maxlength="20"></div>
         <div><label class="field-label">TITLE (optional)</label><input class="field-input" id="link-title" placeholder="e.g. My Homepage"></div>
         <div><label class="field-label">EXPIRY DATE</label><input class="field-input" type="date" id="link-expiry"></div>
-        <div style="grid-column:1/-1">
+        <div style="grid-column:1/-1; position:relative">
           <label class="field-label">TAGS (Enter or comma)</label>
           <div class="tag-input-wrap" id="tag-input-wrap">
-            <input class="tag-input-inner" id="tag-input" placeholder="e.g. marketing, social">
+            <input class="tag-input-inner" id="tag-input" placeholder="e.g. marketing, social" autocomplete="off">
           </div>
+          <div class="tag-suggestions" id="tag-suggestions"></div>
         </div>
       </div>
       <div class="result-card" id="result-card">
@@ -936,7 +941,58 @@ async function toggleExpand(code) {
   item.classList.toggle('expanded');
   if (!was) loadAnalytics(code, 7);
 }
-function toggleEdit(code) { document.getElementById(`edit-${code}`)?.classList.toggle('open'); }
+function toggleEdit(code) {
+  const form = document.getElementById(`edit-${code}`);
+  if (!form) return;
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) initEditTagAutocomplete(code);
+}
+
+function initEditTagAutocomplete(code) {
+  const input = document.getElementById(`edit-tags-${code}`);
+  if (!input || input._acInit) return;
+  input._acInit = true;
+  input.setAttribute('autocomplete','off');
+
+  const wrap = input.parentElement;
+  wrap.style.position = 'relative';
+  const dropdown = document.createElement('div');
+  dropdown.className = 'tag-suggestions';
+  wrap.appendChild(dropdown);
+
+  let idx = -1;
+
+  function partial() { const p=input.value.split(','); return p[p.length-1].trim().toLowerCase().replace(/[^a-z0-9-_]/g,''); }
+  function entered() { const p=input.value.split(','); p.pop(); return p.map(t=>t.trim().toLowerCase()).filter(Boolean); }
+
+  function showSugg() {
+    const q=partial(); if(!q){hideSugg();return;}
+    const matches=allTags.map(t=>t.name).filter(n=>n.includes(q)&&!entered().includes(n));
+    if(!matches.length){hideSugg();return;}
+    idx=-1;
+    dropdown.innerHTML=matches.map(n=>`<div class="tag-suggestion-item" data-tag="${n}">${n}</div>`).join('');
+    dropdown.querySelectorAll('.tag-suggestion-item').forEach(el=>{
+      el.addEventListener('mousedown',e=>{e.preventDefault();selectSugg(el.dataset.tag);});
+    });
+    dropdown.classList.add('open');
+  }
+  function hideSugg() { dropdown.classList.remove('open'); idx=-1; }
+  function updateActive() { dropdown.querySelectorAll('.tag-suggestion-item').forEach((el,i)=>el.classList.toggle('active',i===idx)); }
+  function selectSugg(tag) {
+    const parts=input.value.split(','); parts[parts.length-1]=' '+tag;
+    input.value=parts.join(',')+', '; input.focus(); hideSugg();
+  }
+
+  input.addEventListener('input', showSugg);
+  input.addEventListener('keydown', e=>{
+    const items=dropdown.querySelectorAll('.tag-suggestion-item');
+    if(e.key==='ArrowDown'&&items.length){e.preventDefault();idx=Math.min(idx+1,items.length-1);updateActive();return;}
+    if(e.key==='ArrowUp'&&items.length){e.preventDefault();idx=Math.max(idx-1,-1);updateActive();return;}
+    if(e.key==='Escape'){hideSugg();return;}
+    if((e.key==='Enter'||e.key===',')&&idx>=0&&items.length){e.preventDefault();selectSugg(items[idx].dataset.tag);return;}
+  });
+  input.addEventListener('blur',()=>setTimeout(hideSugg,150));
+}
 
 async function saveEdit(code) {
   const url    = document.getElementById(`edit-url-${code}`).value.trim();
@@ -1081,14 +1137,49 @@ document.getElementById('url-input').addEventListener('blur', async function() {
   _titleFetching = false;
 });
 
-// Tag input
+// Tag input with autocomplete
 const tagInputEl = document.getElementById('tag-input');
+const tagSuggestionsEl = document.getElementById('tag-suggestions');
+let tagSuggestionIndex = -1;
+
 document.getElementById('tag-input-wrap').addEventListener('click',()=>tagInputEl.focus());
+
+function showTagSuggestions(query) {
+  query = query.toLowerCase().replace(/[^a-z0-9-_]/g,'');
+  if (!query) { hideTagSuggestions(); return; }
+  const matches = allTags.map(t=>t.name).filter(n=>n.includes(query)&&!tagInputTags.includes(n));
+  if (!matches.length) { hideTagSuggestions(); return; }
+  tagSuggestionIndex = -1;
+  tagSuggestionsEl.innerHTML = matches.map(n=>`<div class="tag-suggestion-item" data-tag="${n}">${n}</div>`).join('');
+  tagSuggestionsEl.querySelectorAll('.tag-suggestion-item').forEach(el=>{
+    el.addEventListener('mousedown', e=>{ e.preventDefault(); addTagPill(el.dataset.tag); tagInputEl.value=''; hideTagSuggestions(); });
+  });
+  tagSuggestionsEl.classList.add('open');
+}
+function hideTagSuggestions() { tagSuggestionsEl.classList.remove('open'); tagSuggestionIndex=-1; }
+function updateActiveTagSuggestion() {
+  tagSuggestionsEl.querySelectorAll('.tag-suggestion-item').forEach((el,i)=>el.classList.toggle('active',i===tagSuggestionIndex));
+}
+
+tagInputEl.addEventListener('input', ()=>showTagSuggestions(tagInputEl.value.trim()));
 tagInputEl.addEventListener('keydown', e=>{
-  if(e.key==='Enter'||e.key===','){e.preventDefault();addTagPill(tagInputEl.value.trim().replace(/,$/,''));tagInputEl.value='';}
-  else if(e.key==='Backspace'&&tagInputEl.value===''&&tagInputTags.length>0){removeTagPill(tagInputTags[tagInputTags.length-1]);}
+  const items = tagSuggestionsEl.querySelectorAll('.tag-suggestion-item');
+  if (e.key==='ArrowDown'&&items.length) { e.preventDefault(); tagSuggestionIndex=Math.min(tagSuggestionIndex+1,items.length-1); updateActiveTagSuggestion(); return; }
+  if (e.key==='ArrowUp'&&items.length) { e.preventDefault(); tagSuggestionIndex=Math.max(tagSuggestionIndex-1,-1); updateActiveTagSuggestion(); return; }
+  if (e.key==='Escape') { hideTagSuggestions(); return; }
+  if (e.key==='Enter'||e.key===',') {
+    e.preventDefault();
+    if (tagSuggestionIndex>=0&&items.length) { addTagPill(items[tagSuggestionIndex].dataset.tag); }
+    else { addTagPill(tagInputEl.value.trim().replace(/,$/,'')); }
+    tagInputEl.value=''; hideTagSuggestions(); return;
+  }
+  if (e.key==='Tab'&&tagSuggestionIndex>=0&&items.length) { e.preventDefault(); addTagPill(items[tagSuggestionIndex].dataset.tag); tagInputEl.value=''; hideTagSuggestions(); return; }
+  if (e.key==='Backspace'&&tagInputEl.value===''&&tagInputTags.length>0) { removeTagPill(tagInputTags[tagInputTags.length-1]); }
 });
-tagInputEl.addEventListener('blur',()=>{ if(tagInputEl.value.trim()){addTagPill(tagInputEl.value.trim());tagInputEl.value='';} });
+tagInputEl.addEventListener('blur',()=>{
+  setTimeout(hideTagSuggestions, 150);
+  if(tagInputEl.value.trim()){addTagPill(tagInputEl.value.trim());tagInputEl.value='';}
+});
 
 function addTagPill(name) {
   name = name.toLowerCase().replace(/[^a-z0-9-_]/g,'');
